@@ -1,7 +1,17 @@
 {
   "name": "bb-plugin-provider-muse",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
+  "keywords": [
+    "bb-plugin",
+    "provider",
+    "agents",
+    "muse"
+  ],
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
   "engines": {
     "bb": ">=0.41",
     "bbPluginSdk": ">=0.4.34"
@@ -21,6 +31,7 @@
   "devDependencies": {
     "@get-bb/plugin-sdk": "0.4.34",
     "@types/node": "^22.0.0",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "vitest": "^5.0.0"
   }
 }

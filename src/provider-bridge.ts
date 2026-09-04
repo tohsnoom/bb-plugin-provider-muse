@@ -42,6 +42,12 @@ import { randomUUID } from "node:crypto";
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import {
+  execWorkspaceFor,
+  museCommand,
+  resolveEngine,
+  resolveMuseBin,
+} from "./engine.js";
 
 // ---------------------------------------------------------------------------
 // bb → bridge: line-delimited JSON-RPC 2.0 on our stdout (protocol traffic
@@ -93,39 +99,11 @@ let sp: SpawnedMspConnection | null = null;
 let museReady = false;
 let museError = "";
 
-function resolveMuseBin(): string {
-  if (process.env.MUSE_CLI) return process.env.MUSE_CLI;
-  const local = join(homedir(), ".local", "bin", "muse");
-  if (existsSync(local)) return local;
-  return "muse";
-}
-
-function museCommand(): { cmd: string; args: string[] } {
-  // Enable the widest tool/network surface `muse serve` offers: direct network
-  // access (needed for any web work), workspace trust (session rules + skills),
-  // and leave shell + write enabled (we never pass --disable-shell / --disable-write).
-  const base = ["serve", "--sandbox-network", "enabled", "--trust-workspace"];
-  return { cmd: resolveMuseBin(), args: base };
-}
-
 // ---------------------------------------------------------------------------
-// Engine selection: `muse serve` (cheap, minimal external toolset) vs
-// `muse exec` (full interactive toolset: web search, file edit, shell,
-// subagents). Default is serve. Choose exec either globally via MUSE_ENGINE=exec
-// or per-thread by picking the ":tools" model variant in the model picker.
+// Engine selection lives in engine.ts (pure, dependency-free, unit-testable).
+// Default is `serve`; choose `exec` either globally via MUSE_ENGINE=exec or
+// per-thread by picking the ":tools" model variant in the model picker.
 // ---------------------------------------------------------------------------
-
-type MuseEngine = "serve" | "exec";
-
-function resolveEngine(model?: string): MuseEngine {
-  if (model && model.endsWith(":tools")) return "exec";
-  if (process.env.MUSE_ENGINE === "exec") return "exec";
-  return "serve";
-}
-
-function execWorkspaceFor(providerThreadId: string): string {
-  return join(homedir(), ".bb", "muse-workspaces", providerThreadId);
-}
 
 /** Launch `muse serve` and complete the MSP handshake (initialize step included).
  *  This is the exact sequence the official SDK performs; Muse refuses every

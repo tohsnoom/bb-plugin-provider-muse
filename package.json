@@ -20,7 +20,7 @@
     "name": "Muse Code",
     "description": "Native BB provider for Meta's Muse Code CLI: launches `muse serve` and speaks the Muse Server Protocol (MSP) through a provider bridge.",
     "branding": {
-      "icon": "Sparkles"
+      "icon": "./icons/muse.svg"
     },
     "server": "./server.ts",
     "host": "./host.ts"

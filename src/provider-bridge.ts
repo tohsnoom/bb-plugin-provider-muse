@@ -43,7 +43,7 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } fr
 import { homedir } from "node:os";
 import { join } from "node:path";
 import {
-  execWorkspaceFor,
+  sessionWorkspaceFor,
   museCommand,
   resolveEngine,
   resolveMuseBin,
@@ -565,7 +565,7 @@ async function runExecTurn(args: {
     return;
   }
 
-  if (!s.execWorkspace) s.execWorkspace = execWorkspaceFor(args.threadId);
+  if (!s.execWorkspace) s.execWorkspace = sessionWorkspaceFor(args.threadId);
   mkdirSync(s.execWorkspace, { recursive: true });
   // Persist the muse session id in the workspace dir so thread resume keeps
   // conversation continuity (runExecTurn may be called again after resume).
@@ -740,7 +740,7 @@ const handlers: Record<string, RequestHandler> = {
           model: "muse:spark-1.3",
           displayName: "Muse Spark 1.3",
           description:
-            "Meta's flagship reasoning coding model, served through Muse Code.",
+            "Meta's flagship reasoning coding model via Muse Code — workspace-rooted persistent session with full tools (shell, file write, web, subagents).",
           isDefault: true,
           defaultReasoningEffort: "medium",
           supportedReasoningEfforts: [
@@ -753,9 +753,9 @@ const handlers: Record<string, RequestHandler> = {
         {
           id: "muse:spark-1.3:tools",
           model: "muse:spark-1.3",
-          displayName: "Muse Spark 1.3 (full tools)",
+          displayName: "Muse Spark 1.3 (exec engine)",
           description:
-            "Muse exec engine: web search, file edit, shell + subagent tools (higher token cost per turn).",
+            "Alternative `muse exec` one-shot engine (web search, file edit, shell, subagents) with --session-id continuity. Serve already carries full tools; this is an explicit alternative.",
           defaultReasoningEffort: "medium",
           supportedReasoningEfforts: [
             {
@@ -795,9 +795,23 @@ const handlers: Record<string, RequestHandler> = {
       }
       let sessionId: string | null = null;
       try {
+        // Root the serve session's workspace: without `workspaceRoot` on
+        // session/start, muse serve advertises only its minimal built-in toolset
+        // (write_todos, search). Passing the per-thread workspace dir grants the
+        // full policy-gated toolset — shell, file write, web, subagents — making
+        // serve behave like `muse` itself (verified live: with workspaceRoot the
+        // model ran bash + write_file and landed probe_out.txt on disk). The same
+        // dir exec uses (sessionWorkspaceFor), so both engines share the surface.
+        const wsRoot = sessionWorkspaceFor(parsed.data.threadId);
+        try {
+          mkdirSync(wsRoot, { recursive: true });
+        } catch {
+          /* best-effort; a missing dir just yields the minimal toolset */
+        }
         const startRes = (await museSend("session/start", {
           commandId: museMintCommandId(),
           approvalMode: "allowAll",
+          workspaceRoot: wsRoot,
         })) as { session?: { sessionId?: string } } | null;
         // The session identity comes back as result.session.sessionId — Muse
         // selects its own default model (bundled catalog), so we do not

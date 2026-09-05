@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import {
-  execWorkspaceFor,
+  sessionWorkspaceFor,
   museCommand,
   resolveEngine,
   resolveMuseBin,
@@ -57,9 +57,9 @@ describe("museCommand", () => {
   });
 });
 
-describe("execWorkspaceFor", () => {
+describe("sessionWorkspaceFor", () => {
   it("points at the per-thread workspace under ~/.bb", () => {
-    expect(execWorkspaceFor("thr_abc123")).toBe(
+    expect(sessionWorkspaceFor("thr_abc123")).toBe(
       join(homedir(), ".bb", "muse-workspaces", "thr_abc123"),
     );
   });

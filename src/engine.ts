@@ -2,10 +2,13 @@
  * Muse provider engine/config selection — pure helpers, dependency-free so they
  * can be unit-tested without loading the plugin SDK or the Muse SDK.
  *
- * Decide which mode the bridge runs: `serve` (persistent MSP session, minimal
- * external toolset, low token overhead — the default) vs `exec` (full
- * interactive toolset: web search, file edit, shell, subagents — chosen by
- * the ":tools" model variant or MUSE_ENGINE=exec).
+ * Decide which mode the bridge runs: `serve` (persistent MSP session, workspace
+ * rooted via `session/start` `workspaceRoot`, so the full policy-gated toolset —
+ * shell, file write, web, subagents — is available; the default) vs `exec`
+ * (a separate one-shot command with `--workspace` + `--session-id` continuity,
+ * chosen by the ":tools" model variant or MUSE_ENGINE=exec). Serve now carries
+ * the full toolset, so `exec` is no longer required for tool access; it remains
+ * available as an explicit alternative engine.
  */
 import { existsSync } from "node:fs";
 import { homedir } from "node:os";
@@ -34,6 +37,6 @@ export function resolveEngine(model?: string): MuseEngine {
   return "serve";
 }
 
-export function execWorkspaceFor(providerThreadId: string): string {
+export function sessionWorkspaceFor(providerThreadId: string): string {
   return join(homedir(), ".bb", "muse-workspaces", providerThreadId);
 }
